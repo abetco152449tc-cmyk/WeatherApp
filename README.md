@@ -1,56 +1,71 @@
-# Welcome to your Expo app 👋
+# Weather App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo / React Native weather app for the CCE106 API assessment.
 
-## Get started
+## Run on a phone or emulator
 
-1. Install dependencies
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env` if needed and set `EXPO_PUBLIC_OPENWEATHER_API_KEY` to your OpenWeather key. The existing local `.env` is already configured.
+3. Run `npm start` (restart with `npx expo start --clear` after changing `.env`).
+4. Open the QR code in an Expo Go version compatible with SDK 57, or press `a` for an installed Android emulator. Use `npm run web` for a browser preview.
 
-   ```bash
-   npm install
-   ```
+The key is excluded from Git. Expo public environment variables are embedded in the client bundle; use a backend proxy for a production app requiring a private key.
 
-2. Start the app
+## Code organization
 
-   ```bash
-   npx expo start
-   ```
+- `src/app/index.tsx`: main screen layout.
+- `src/styles/weather.styles.ts`: all weather screen styles, one property per line.
+- `src/components/weather/CitySearch.tsx`: city input and search button.
+- `src/components/weather/WeatherCard.tsx`: successful weather display.
+- `src/components/weather/WeatherResult.tsx`: empty, loading, error and success views.
+- `src/hooks/use-weather.ts`: form state, validation, search, retry and cancellation.
+- `src/services/weather.ts`: API request and response validation.
 
-In the output, you'll find options to open the app in a
+## Grading criteria
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Requirement | Implementation |
+| --- | --- |
+| Working API request, fetch and async/await | `src/services/weather.ts`: OpenWeather current weather request |
+| Dynamic query parameter | Encodes the submitted city in `q`; requests `units=metric` |
+| useState and useEffect | `src/hooks/use-weather.ts`: form state and request effect with cancellation |
+| Empty state | Welcome card before a search; inline validation for blank input |
+| Loading state | Spinner and loading message during requests |
+| Success state | City, temperature in Celsius, condition, humidity, feels-like and wind |
+| Error state | Invalid city, connection failure, timeout, invalid key, rate limit and service failure |
+| Meaningful interaction | Search button, keyboard submission, Davao shortcut and retry make requests |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Demonstration checklist
 
-## Get a fresh project
+- Launch the app and show the initial empty state.
+- Submit a blank city to show validation.
+- Search `Davao,PH`; show loading followed by real weather.
+- Choose Search Another City, then search `Tokyo,JP`; explain that the query changes.
+- Search `zzzzinvalidcityxyz` to show the invalid-city message.
+- Disconnect the device from the internet and search again; show the network error (a stalled connection times out after 15 seconds).
+- Reconnect, tap Try Again, and show successful recovery.
 
-When you're ready, run:
+A device/emulator demonstration is still required for submission; automated checks do not replace it.
 
-```bash
-npm run reset-project
-```
+## Checks
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- `npx tsc --noEmit`
+- `npm run lint`
+- `node scripts/weather.test.mjs` (Node 22+)
+- `node --env-file=.env scripts/check-weather-api.mjs` (live valid/invalid-city checks)
+- `npx expo export --platform web`
 
-### Other setup steps
+API reference: https://openweathermap.org/api/current
+Expo SDK reference: https://docs.expo.dev/versions/v57.0.0/
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Mobile design and forecasts
 
-## Learn more
+The screen uses a bundled sky photograph, translucent cards, native safe areas, a keyboard-aware search bar, and horizontal forecast scrolling. The gear button opens a temperature-unit selector; Celsius/Fahrenheit applies to all temperature readings for the current session.
 
-To learn more about developing your project with Expo, look at the following resources:
+- `components/weather/ForecastSections.tsx`: independently loads forecasts and handles loading, retry and errors without hiding current weather.
+- `components/weather/WeatherSettings.tsx`: temperature-unit settings modal.
+- `services/forecast.ts`: OpenWeather five-day / three-hour forecast and daily grouping in the searched city's timezone.
+- `utils/weather-format.ts`: temperature conversion, country names and weather symbols.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The 3-Hour Forecast displays the next eight available intervals. The five-day outlook summarizes available intervals by local calendar date; a partial first day is possible. Times use the searched city's timezone. The current weather card's date/time is the API observation time. No forecast values are hardcoded.
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Additional checks: `node scripts/forecast.test.mjs` and `node --env-file=.env scripts/check-forecast-api.mjs`.
